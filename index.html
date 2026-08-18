@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#16a34a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Golf Tracker">
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./icon-180.png">
+<title>Golf Shot Tracker</title>
+<style>
+:root{--bg:#0b0f0c;--card:#151b17;--card2:#1b231e;--text:#f5f7f5;--muted:#9ca79f;--green:#16a34a;--green2:#22c55e;--line:#29332c;--danger:#ef4444}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif}
+button,input,select{font:inherit}button{cursor:pointer}
+.app{max-width:620px;margin:auto;min-height:100vh;padding-bottom:92px}
+header{padding:22px 18px 10px;display:flex;align-items:center;justify-content:space-between}
+.brand{font-size:24px;font-weight:800}.sub{color:var(--muted);font-size:13px;margin-top:3px}
+main{padding:10px 14px}.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:18px;margin-bottom:14px}
+h1{font-size:30px;margin:6px 0 8px}h2{font-size:20px;margin:0 0 14px}h3{font-size:16px;margin:0 0 10px}
+.muted{color:var(--muted)}.big{font-size:42px;font-weight:850}.green{color:var(--green2)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.metric{background:var(--card2);padding:14px;border-radius:15px}.metric .v{font-size:26px;font-weight:800}.metric .l{font-size:12px;color:var(--muted)}
+label{display:block;font-size:13px;color:var(--muted);margin:13px 0 7px}
+input,select{width:100%;background:#0f1411;color:var(--text);border:1px solid #354139;border-radius:12px;padding:13px;outline:none}
+.primary{background:var(--green);color:white;border:0;border-radius:13px;padding:14px 18px;font-weight:800;width:100%}.secondary{background:#263129;color:white;border:1px solid #3b493f;border-radius:13px;padding:12px 15px;font-weight:700}
+.smallbtn{padding:9px 11px;border-radius:10px;border:1px solid #39463d;background:#202820;color:#fff}
+.clubgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.club{background:#0f1411;color:#fff;border:1px solid #344037;border-radius:11px;padding:12px 4px;font-weight:750}.club.active{background:var(--green);border-color:var(--green)}
+.locgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.loc{background:#0f1411;color:#fff;border:1px solid #344037;border-radius:11px;padding:11px 4px}.loc.active{background:#166534;border-color:#22c55e}
+.holes{display:flex;gap:8px;overflow:auto;padding-bottom:5px}.holepill{min-width:70px;padding:10px 7px;background:#151b17;border:1px solid #354139;border-radius:13px;text-align:center}.holepill.active{background:var(--green);border-color:var(--green)}.holepill .n{font-weight:800}.holepill .p{font-size:12px;color:#d3d9d4}.holepill .s{font-size:12px;color:var(--muted)}
+.shotrow{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);padding:11px 0}.shotrow:last-child{border-bottom:0}.shotmain{font-weight:750}.shotmeta{color:var(--muted);font-size:13px;margin-top:3px}
+.roundrow{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:14px 0;border-bottom:1px solid var(--line)}.roundrow:last-child{border-bottom:0}
+.nav{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);width:min(590px,calc(100% - 28px));background:#151b17ee;backdrop-filter:blur(15px);border:1px solid #344037;border-radius:22px;padding:7px;display:grid;grid-template-columns:repeat(3,1fr);z-index:10}.nav button{background:transparent;color:var(--muted);border:0;padding:9px 4px;border-radius:15px}.nav button.active{background:#23402a;color:#fff}
+.toprow{display:flex;justify-content:space-between;align-items:center}.pill{display:inline-block;background:#173c22;color:#6ee7a0;padding:6px 10px;border-radius:999px;font-size:12px;font-weight:800}
+.toast{position:fixed;top:15px;left:50%;transform:translateX(-50%);background:#f5f7f5;color:#111;padding:10px 14px;border-radius:999px;font-weight:700;z-index:30;display:none}
+table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;padding:10px 5px;border-bottom:1px solid var(--line)}th{color:var(--muted)}
+.empty{text-align:center;padding:35px 10px;color:var(--muted)}
+.danger{color:#fecaca;border-color:#7f1d1d;background:#3a1616}
+@media(max-width:380px){.clubgrid{grid-template-columns:repeat(3,1fr)}.grid2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div id="toast" class="toast"></div>
+<div class="app">
+<header>
+  <div><div class="brand">⛳ Golf Tracker</div><div class="sub">Personal shot & score tracker</div></div>
+  <button class="smallbtn" onclick="exportData()">Backup</button>
+</header>
+<main id="main"></main>
+<nav class="nav">
+  <button id="nav-round" onclick="showTab('round')">⛳<br>Round</button>
+  <button id="nav-history" onclick="showTab('history')">☷<br>Rounds</button>
+  <button id="nav-stats" onclick="showTab('stats')">▥<br>Stats</button>
+</nav>
+</div>
+<script>
+const KEY='golfTrackerV2';
+let db=JSON.parse(localStorage.getItem(KEY)||'{"rounds":[]}');
+let tab='round', currentRoundId=null, currentHole=1, selectedClub='Driver', selectedLocation='Fairway';
+
+const clubs=['Driver','3W','5W','4I','5I','6I','7I','8I','9I','PW','50°','54°','60°','Putter'];
+const locations=['Tee','Fairway','Rough','Bunker','Green','Penalty'];
+
+function save(){localStorage.setItem(KEY,JSON.stringify(db))}
+function id(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
+function toast(t){const e=document.getElementById('toast');e.textContent=t;e.style.display='block';setTimeout(()=>e.style.display='none',1500)}
+function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+function fmtDate(d){return new Date(d+'T00:00:00').toLocaleDateString('en-MY',{day:'2-digit',month:'short',year:'numeric'})}
+function result(score,par){const x=score-par; if(score===0)return 'Not played'; if(x<=-3)return 'Albatross+'; if(x===-2)return 'Eagle'; if(x===-1)return 'Birdie'; if(x===0)return 'Par'; if(x===1)return 'Bogey'; if(x===2)return 'Double Bogey'; return `+${x}`}
+
+function getRound(){return db.rounds.find(r=>r.id===currentRoundId)}
+function totalScore(r){return r.holes.reduce((a,h)=>a+h.shots.length,0)}
+function totalPar(r){return r.holes.reduce((a,h)=>a+h.par,0)}
+function totalPutts(r){return r.holes.reduce((a,h)=>a+h.shots.filter(s=>s.club==='Putter').length,0)}
+function shotDistance(h, shot, idx){
+ const rem=Number(shot.remaining);
+ if(!Number.isFinite(rem)) return null;
+ const before=idx===0 ? Number(h.distance) : Number(h.shots[idx-1].remaining);
+ if(!Number.isFinite(before)) return null;
+ return Math.round((before-rem)*10)/10;
+}
+function lastRemaining(h){return h.shots.length?Number(h.shots[h.shots.length-1].remaining):Number(h.distance)}
+
+function showTab(t){tab=t; if(t!=='round')currentRoundId=null; render()}
+function render(){
+ document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
+ document.getElementById('nav-'+(tab==='history'?'history':tab)).classList.add('active');
+ if(tab==='round')renderRound(); else if(tab==='history')renderHistory(); else renderStats();
+}
+
+function renderRound(){
+ const r=getRound();
+ if(!r){document.getElementById('main').innerHTML=`
+ <div class="card" style="text-align:center;padding:32px 20px">
+   <div style="font-size:52px">⛳</div><h1>Ready to play?</h1>
+   <p class="muted">Log every shot, distance and putt while you play.</p>
+   <button class="primary" onclick="newRound()">＋ START NEW ROUND</button>
+ </div>
+ <div class="card"><h2>Quick workflow</h2><div class="muted">Pick club → enter distance → choose location → Log Shot. Score and putts are calculated automatically.</div></div>`;
+ return}
+ const h=r.holes[currentHole-1];
+ const score=h.shots.length, putts=h.shots.filter(s=>s.club==='Putter').length;
+ document.getElementById('main').innerHTML=`
+ <div class="card">
+  <div class="toprow"><div><div class="muted">${esc(r.course)} · ${fmtDate(r.date)}</div><h1>Hole ${h.number}</h1></div><span class="pill">${r.status==='active'?'LIVE':'DONE'}</span></div>
+  <div class="grid2">
+   <div class="metric"><div class="l">PAR</div><div class="v">${h.par}</div></div>
+   <div class="metric"><div class="l">SCORE</div><div class="v">${score||'—'}</div></div>
+   <div class="metric"><div class="l">PUTTS</div><div class="v">${putts}</div></div>
+   <div class="metric"><div class="l">VS PAR</div><div class="v ${score&&score-h.par<0?'green':''}">${score?((score-h.par>0?'+':'')+(score-h.par)): '—'}</div></div>
+  </div>
+  <label>Hole par</label>
+  <select onchange="setPar(this.value)">${[3,4,5].map(p=>`<option ${p===h.par?'selected':''}>${p}</option>`).join('')}</select>
+  <label>Hole distance (metres)</label><input type="number" inputmode="decimal" min="0" step="0.1" value="${Number.isFinite(h.distance)?h.distance:''}" onchange="setHoleDistance(this.value)" placeholder="e.g. 380">
+  <div class="muted" style="margin-top:7px;font-size:12px">Enter the distance to the pin before the first shot. After each shot, enter the <b>remaining distance</b>. The app calculates the shot distance automatically.</div>
+ </div>
+ <div class="holes">${r.holes.map((x,i)=>`<button class="holepill ${i+1===currentHole?'active':''}" onclick="goHole(${i+1})"><div class="n">H${i+1}</div><div class="p">P${x.par}</div><div class="s">${x.shots.length?x.shots.length:'—'}</div></button>`).join('')}</div>
+ <div class="card"><h2>Shot ${score+1}</h2>
+  <div class="clubgrid">${clubs.map(c=>`<button class="club ${selectedClub===c?'active':''}" onclick="pickClub('${c}')">${c}</button>`).join('')}</div>
+  <label>Remaining distance after shot (metres)</label><input id="dist" type="number" inputmode="decimal" min="0" step="0.1" placeholder="e.g. 200">
+  <div class="muted" style="margin-top:7px;font-size:12px">Example: hole is 380m and you finish the driver at 200m remaining → Driver distance = 180m.</div>
+  <label>Location</label><div class="locgrid">${locations.map(l=>`<button class="loc ${selectedLocation===l?'active':''}" onclick="pickLoc('${l}')">${l}</button>`).join('')}</div>
+  <div style="height:12px"></div><button class="primary" onclick="logShot()">LOG SHOT</button>
+ </div>
+ <div class="card"><h2>Shots on Hole ${h.number}</h2>${h.shots.length?h.shots.map((s,i)=>`<div class="shotrow"><div><div class="shotmain">${i+1}. ${esc(s.club)}</div><div class="shotmeta">${shotDistance(h,s,i)!==null?`Shot ${shotDistance(h,s,i)}m · `:''}${s.remaining}m remaining · ${esc(s.location)}</div></div><button class="smallbtn danger" onclick="deleteShot(${i})">Delete</button></div>`).join(''):'<div class="empty">No shots yet</div>'}</div>
+ <div class="grid2"><button class="secondary" onclick="finishHole()">${h.number===r.holes.length?'Finish Round':'Finish Hole'}</button><button class="secondary" onclick="endRound()">End Round</button></div>`;
+}
+function pickClub(c){selectedClub=c;renderRound()}
+function pickLoc(l){selectedLocation=l;renderRound()}
+function setPar(v){getRound().holes[currentHole-1].par=Number(v);save();renderRound()}
+function setHoleDistance(v){const d=Number(v);if(!Number.isFinite(d)||d<0){toast('Enter a valid hole distance');return}getRound().holes[currentHole-1].distance=d;save();renderRound()}
+function goHole(n){currentHole=n;renderRound()}
+function logShot(){
+ const rem=Number(document.getElementById('dist').value);
+ if(!Number.isFinite(rem)||rem<0){toast('Enter remaining distance');return}
+ const r=getRound(),h=r.holes[currentHole-1];
+ const before=lastRemaining(h);
+ if(!Number.isFinite(before)){toast('Enter hole distance first');return}
+ if(rem>before){toast('Remaining distance cannot be greater than before the shot');return}
+ h.shots.push({club:selectedClub,remaining:rem,location:selectedLocation});
+ save();toast('Shot logged');renderRound()
+}
+function deleteShot(i){getRound().holes[currentHole-1].shots.splice(i,1);save();renderRound()}
+function finishHole(){
+ const r=getRound(),h=r.holes[currentHole-1];
+ if(!h.shots.length){toast('Log at least one shot');return}
+ h.finished=true;
+ if(currentHole<r.holes.length){currentHole++;toast('Next hole');renderRound()}
+ else endRound();
+}
+function endRound(){
+ const r=getRound(); if(!r)return;
+ if(!confirm('End this round?'))return;
+ r.status='completed'; r.finishedAt=new Date().toISOString(); save(); toast('Round saved'); currentRoundId=null; render()
+}
+function newRound(){
+ const course=prompt('Course name?','My Golf Course'); if(!course)return;
+ const holes=Number(prompt('How many holes? Enter 9 or 18','18')); if(![9,18].includes(holes))return toast('Use 9 or 18');
+ const date=new Date().toISOString().slice(0,10);
+ const r={id:id(),course,date,holeCount:holes,status:'active',holes:Array.from({length:holes},(_,i)=>({number:i+1,par:4,distance:0,shots:[],finished:false}))};
+ db.rounds.unshift(r);save();currentRoundId=r.id;currentHole=1;tab='round';render();toast('Round started')
+}
+function renderHistory(){
+ const rows=db.rounds.map(r=>{const sc=totalScore(r),pa=totalPar(r);return `<div class="roundrow"><div><b>${esc(r.course)}</b><div class="muted">${fmtDate(r.date)} · ${r.holeCount} holes · ${r.status}</div></div><div style="text-align:right"><b>${sc||'—'}</b><div class="muted">${sc?((sc-pa>0?'+':'')+(sc-pa)):'—'}</div><button class="smallbtn" onclick="openRound('${r.id}')">Open</button></div></div>`}).join('');
+ document.getElementById('main').innerHTML=`<div class="toprow"><h1>Rounds</h1><button class="smallbtn" onclick="newRound()">＋ New</button></div><div class="card">${rows||'<div class="empty">No rounds yet.</div>'}</div>
+ <div class="card"><h2>Backup & restore</h2><p class="muted">Your rounds are stored on this device/browser. Export a backup before changing phones or clearing Safari data.</p><div class="grid2"><button class="secondary" onclick="exportData()">Export JSON</button><button class="secondary" onclick="document.getElementById('import').click()">Import JSON</button></div><input id="import" type="file" accept=".json" style="display:none" onchange="importData(event)"></div>`;
+}
+function openRound(idv){const r=db.rounds.find(x=>x.id===idv);if(!r)return;currentRoundId=r.id;currentHole=1;tab='round';render()}
+function renderStats(){
+ const rounds=db.rounds.filter(r=>totalScore(r)>0), scores=rounds.map(totalScore), pars=rounds.map(totalPar), putts=rounds.map(totalPutts);
+ const avg=a=>a.length?(a.reduce((x,y)=>x+y,0)/a.length).toFixed(1):'—';
+ const shots={}; db.rounds.forEach(r=>r.holes.forEach(h=>h.shots.forEach((s,i)=>{if(s.club!=='Putter'){const d=shotDistance(h,s,i);if(d!==null&&d>=0){shots[s.club]??=[];shots[s.club].push(d)}}})));
+ const clubRows=Object.entries(shots).sort((a,b)=>clubs.indexOf(a[0])-clubs.indexOf(b[0])).map(([c,a])=>`<tr><td>${esc(c)}</td><td>${avg(a)}</td><td>${Math.max(...a)}</td><td>${a.length}</td></tr>`).join('');
+ document.getElementById('main').innerHTML=`<h1>Stats</h1><div class="grid2">
+ <div class="metric"><div class="l">ROUNDS</div><div class="v">${rounds.length}</div></div>
+ <div class="metric"><div class="l">AVG SCORE</div><div class="v">${avg(scores)}</div></div>
+ <div class="metric"><div class="l">BEST SCORE</div><div class="v">${scores.length?Math.min(...scores):'—'}</div></div>
+ <div class="metric"><div class="l">AVG PUTTS</div><div class="v">${avg(putts)}</div></div>
+ </div>
+ <div class="card"><h2>Club distances</h2><div class="muted" style="font-size:12px;margin:-5px 0 12px">Calculated from change in remaining distance. This is net distance gained toward the pin.</div>${clubRows?`<table><thead><tr><th>Club</th><th>Avg m</th><th>Best m</th><th>Shots</th></tr></thead><tbody>${clubRows}</tbody></table>`:'<div class="empty">Play a round to build club stats.</div>'}</div>
+ <div class="card"><h2>Score trend</h2>${scores.length?`<div style="font-size:22px;font-weight:800">${scores.slice().reverse().join(' → ')}</div><div class="muted" style="margin-top:8px">Oldest → newest</div>`:'<div class="empty">No scores yet.</div>'}</div>`;
+}
+function exportData(){const blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='golf-tracker-backup.json';a.click();URL.revokeObjectURL(a.href)}
+function importData(e){const f=e.target.files[0];if(!f)return;const reader=new FileReader();reader.onload=()=>{try{const x=JSON.parse(reader.result);if(!x.rounds)throw Error();db=x;save();render();toast('Backup restored')}catch{toast('Invalid backup')}};reader.readAsText(f)}
+if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+render();
+</script>
+</body>
+</html>
